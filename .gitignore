@@ -1,0 +1,6 @@
+zig-out/
+log.txt
+.zig-cache/
+.DS_Store
+zig_game
+assets/
