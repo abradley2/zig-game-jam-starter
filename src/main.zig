@@ -114,7 +114,7 @@ fn runGame(
     const screenWidth = 800;
     const screenHeight = 450;
 
-    rl.initWindow(screenWidth, screenHeight, "raylib-zig [core] example - basic window");
+    rl.initWindow(screenWidth, screenHeight, "Unnamed Game");
     defer rl.closeWindow();
 
     try loadMap(l, MapId.Area01, entity_pool, components, textures);
@@ -131,9 +131,7 @@ fn runGame(
         rl.beginDrawing();
         defer rl.endDrawing();
 
-        rl.clearBackground(rl.Color.white);
-
-        rl.drawText("Congrats! You created your first window!", 190, 200, 20, rl.Color.light_gray);
+        rl.clearBackground(rl.Color.black);
     }
 
     entity_pool.freeEntity(components, demo_entity_id);
