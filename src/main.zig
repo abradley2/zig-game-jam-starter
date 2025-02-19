@@ -71,11 +71,36 @@ fn loadMap(
 
     const tile_map = try TileMap.init(map_id, &context, textures);
 
-    for (tile_map.layers.slice()) |layer| {
-        std.debug.print("Loading layer: {any}\n", .{layer.data.slice()});
+    for (0.., tile_map.layers.slice()) |layer_idx, layer| {
+        const layer_entity = entity_pool.spawnEntity();
+        var layer_sprite_group = entity_pool.acquireSpriteGroup(layer_entity);
+
+        _ = layer_idx;
+        for (0.., layer.data.slice()) |tile_idx, tile| {
+            _ = tile;
+            const row = tile_idx / tile_map.width;
+            const col = tile_idx % tile_map.height;
+
+            const x_offset = col * tile_map.tile_width;
+            const y_offset = row * tile_map.tile_height;
+
+            const sprite = component.Sprite{
+                .dst_offset_x = @floatFromInt(x_offset),
+                .dst_offset_y = @floatFromInt(y_offset),
+                .dst_height = @floatFromInt(tile_map.tile_height),
+                .dst_width = @floatFromInt(tile_map.tile_width),
+                .src_rect = rl.Rectangle{
+                    .x = 32,
+                    .y = 32,
+                    .width = 32,
+                    .height = 32,
+                },
+            };
+
+            try layer_sprite_group.sprites.append(sprite);
+        }
     }
 
-    _ = entity_pool;
     _ = components;
 }
 
