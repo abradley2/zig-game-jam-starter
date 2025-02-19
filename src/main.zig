@@ -38,9 +38,7 @@ pub fn main() !void {
     var textures = std.AutoHashMap(TextureId, rl.Texture2D).init(game_alloc.allocator());
     defer {
         var texture_map_iter = textures.iterator();
-        std.debug.print("Unloading textures...\n", .{});
         while (texture_map_iter.next()) |entry| {
-            std.debug.print("Unloading texture: {}\n", .{entry.key_ptr.*});
             rl.unloadTexture(entry.value_ptr.*);
         }
         textures.deinit();
