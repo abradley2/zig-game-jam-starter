@@ -13,9 +13,12 @@ tile_height: u32,
 tile_width: u32,
 spacing: u32,
 margin: u32,
+tile_count: u32,
+first_gid: u32,
 
 pub fn fromFile(
     file: *File,
+    first_gid: u32,
     context: *Context,
 ) !Self {
     var buffer: [1024 * 64]u8 = undefined;
@@ -32,11 +35,12 @@ pub fn fromFile(
         .{},
     );
 
-    return try fromJson(json, context);
+    return try fromJson(json, first_gid, context);
 }
 
 pub fn fromJson(
     json: std.json.Value,
+    first_gid: u32,
     context: *Context,
 ) error{ InvalidField, UnknownTextureId, MissingField }!Self {
     const tile_set_obj = switch (json) {
@@ -47,6 +51,14 @@ pub fn fromJson(
     context.push("columns", .{});
     const columns_json = try (tile_set_obj.get("columns") orelse error.MissingField);
     const columns = switch (columns_json) {
+        .integer => |num| @as(u32, @intCast(num)),
+        else => return error.InvalidField,
+    };
+    context.pop();
+
+    context.push("tilecount", .{});
+    const tile_count_json = try (tile_set_obj.get("tilecount") orelse error.MissingField);
+    const tile_count = switch (tile_count_json) {
         .integer => |num| @as(u32, @intCast(num)),
         else => return error.InvalidField,
     };
@@ -113,5 +125,7 @@ pub fn fromJson(
         .tile_width = tile_width,
         .spacing = spacing,
         .margin = margin,
+        .tile_count = tile_count,
+        .first_gid = first_gid,
     };
 }

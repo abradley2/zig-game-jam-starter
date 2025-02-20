@@ -71,35 +71,71 @@ fn loadMap(
 
     for (0.., tile_map.layers.slice()) |layer_idx, layer| {
         const layer_entity = entity_pool.spawnEntity();
+
+        components.items(.position)[layer_entity] = component.Slot(component.Position){
+            .has = component.Position{
+                .x = 0.0,
+                .y = 0.0,
+                .z = @floatFromInt(layer_idx),
+            },
+        };
+
         var layer_sprite_group = entity_pool.acquireSpriteGroup(layer_entity);
 
-        _ = layer_idx;
-        for (0.., layer.data.slice()) |tile_idx, tile| {
-            _ = tile;
+        components.items(.sprite_group)[layer_entity] = component.Slot(*component.SpriteGroup){
+            .has = layer_sprite_group,
+        };
+
+        components.items(.texture)[layer_entity] = component.Slot(component.Texture){
+            .has = component.Texture{
+                .texture_ptr = textures.getPtr(TextureId.ShipTerrainAndBackWall).?,
+            },
+        };
+
+        for (0.., layer.data.slice()) |tile_idx, tile_global_id| {
             const row = tile_idx / tile_map.width;
             const col = tile_idx % tile_map.height;
 
             const x_offset = col * tile_map.tile_width;
             const y_offset = row * tile_map.tile_height;
 
+            var src_rect: ?rl.Rectangle = null;
+            for (tile_map.tile_sets.slice()) |tile_set| {
+                if (tile_set.first_gid <= tile_global_id and tile_global_id < (tile_set.first_gid + tile_set.tile_count)) {
+                    const local_tile_id = tile_global_id - tile_set.first_gid;
+
+                    const tile_col = local_tile_id % tile_set.columns;
+                    const tile_row = local_tile_id / tile_set.columns;
+
+                    const src_x = tile_col * (tile_set.tile_width + tile_set.spacing) + tile_set.margin;
+                    const src_y = tile_row * (tile_set.tile_height + tile_set.spacing) + tile_set.margin;
+                    const src_width = tile_set.tile_width;
+                    const src_height = tile_set.tile_height;
+
+                    src_rect = rl.Rectangle{
+                        .x = @floatFromInt(src_x),
+                        .y = @floatFromInt(src_y),
+                        .width = @floatFromInt(src_width),
+                        .height = @floatFromInt(src_height),
+                    };
+                }
+            }
+
+            if (src_rect == null) {
+                continue;
+            }
+
             const sprite = component.Sprite{
                 .dst_offset_x = @floatFromInt(x_offset),
                 .dst_offset_y = @floatFromInt(y_offset),
                 .dst_height = @floatFromInt(tile_map.tile_height),
                 .dst_width = @floatFromInt(tile_map.tile_width),
-                .src_rect = rl.Rectangle{
-                    .x = 32,
-                    .y = 32,
-                    .width = 32,
-                    .height = 32,
-                },
+                .src_rect = src_rect.?,
             };
 
             try layer_sprite_group.sprites.append(sprite);
         }
     }
-
-    _ = components;
 }
 
 fn runGame(
@@ -132,6 +168,33 @@ fn runGame(
         defer rl.endDrawing();
 
         rl.clearBackground(rl.Color.black);
+
+        const component_slots = components.slice();
+        for (
+            component_slots.items(.position),
+            component_slots.items(.sprite_group),
+            component_slots.items(.texture),
+        ) |
+            has_position,
+            has_sprite_group,
+            has_texture,
+        | {
+            const position = component.toOpt(component.Position, has_position) orelse continue;
+            const sprite_group = component.toOpt(*component.SpriteGroup, has_sprite_group) orelse continue;
+            const texture = component.toOpt(component.Texture, has_texture) orelse continue;
+
+            for (sprite_group.sprites.items) |sprite| {
+                rl.drawTextureRec(
+                    texture.texture_ptr.*,
+                    sprite.src_rect,
+                    rl.Vector2{
+                        .x = position.x + sprite.dst_offset_x,
+                        .y = position.y + sprite.dst_offset_y,
+                    },
+                    rl.Color.white,
+                );
+            }
+        }
     }
 
     entity_pool.freeEntity(components, demo_entity_id);

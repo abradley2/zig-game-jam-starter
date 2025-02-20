@@ -105,7 +105,11 @@ pub fn init(
         );
         defer tile_set_file.close();
 
-        const tile_set = try TileSet.fromFile(&tile_set_file, context);
+        const tile_set = try TileSet.fromFile(
+            &tile_set_file,
+            tile_set_source.first_gid,
+            context,
+        );
         tile_map.tile_sets.appendAssumeCapacity(tile_set);
         context.pop();
 

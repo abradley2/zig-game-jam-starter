@@ -26,11 +26,15 @@ pub const ComponentSpec = struct {
     position: Slot(Position),
     velocity: Slot(Velocity),
     health: Slot(Health),
+    sprite_group: Slot(*SpriteGroup),
+    texture: Slot(Texture),
     pub fn default() ComponentSpec {
         return ComponentSpec{
             .position = .empty,
             .velocity = .empty,
             .health = .empty,
+            .sprite_group = .empty,
+            .texture = .empty,
         };
     }
 };

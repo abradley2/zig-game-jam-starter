@@ -44,6 +44,9 @@ pub const EntityPool: type = struct {
     }
 
     pub fn deinit(self: *EntityPool) void {
+        for (self.sprite_groups) |sprite_group| {
+            sprite_group.sprites.deinit();
+        }
         self.game_alloc.destroy(self.sprite_groups);
     }
 
